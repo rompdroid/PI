@@ -113,16 +113,6 @@ public:
             return ( np - this->m_head->m_p_free.get() <= this->m_head->m_count );
         }
 
-    //void clear() throw()
-    //    {
-    //        this->initialize( this->reservedCount() );
-    //    }
-
-    //iterator erase( const iterator & it ) throw()
-    //    {
-    //        return this->erase( it.get() );
-    //    }
-
     PNode erase( PField p ) throw()
         {
             VTYPE( PNode, ep, p );
@@ -143,31 +133,6 @@ public:
 
             return np;
         }
-
-    //PNode fetch( Int32 at ) const throw()
-    //{
-    //    if ( at == at_first )
-    //        return this->begin();
-
-    //    PNode np = 0;
-    //    if ( at < at_first )
-    //    {
-    //        at = ( -at % this->m_head->m_count );
-    //        for ( np = this->end(); at; at-- )
-    //        {
-    //            np = np->prior();
-    //        }
-    //    }
-    //    else
-    //    {
-    //        at %= this->m_head->m_count;
-    //        for ( np = this->begin(); at; at-- )
-    //        {
-    //            np = np->next();
-    //        }
-    //    }
-    //    return np;
-    //}
 
     template< typename _ty >
     PNode insert( const _ty & v )
