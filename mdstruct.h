@@ -1,27 +1,25 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 //
 // mdstruct.h
-// Copyright (c) 2008. All rights reserved.
+// Copyright (c) 2008 by Xie Yun. All rights reserved.
 //
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-#if !defined( _H_MDSTRUCT )
+#ifndef _H_MDSTRUCT
 #define _H_MDSTRUCT
 
 #include "mdata.h"
 
-#if ! defined( TYPE )
-#include "xtypes.h"
-#endif
+//#ifndef TYPE
+//#include "typedefs.h"
+//#endif
 
-#if ! defined( PINT8 )
-
+#ifndef PINT8
 #define PINT8( x ) \
     TYPE<UInt8 *>( x )
 
 #define VAR_PMDC( x, y ) \
     VAR( MDCHead *, x, y )
-
 #endif
 
 // MDStruct
@@ -43,15 +41,14 @@ private:
         _At m_at;
         _BField()
             {
-                _At & at = this->m_at;
-                at.m_this = TYPE<_At *>( PINT8( this ) - sizeof(_BField) )->m_this;;
-                at.m_pos = at.m_this->m_at.m_pos++;
+                this->m_at.m_this = TYPE<_At *>(PINT8(this) - sizeof(_BField))->m_this;;
+                this->m_at.m_pos = this->m_at.m_this->m_at.m_pos++;
             };
     };
 
+private:
     _At m_at;
 
-private:
     void init() throw()
         {
             this->m_at.m_pos = 0;
@@ -88,7 +85,6 @@ public:
     using MDComposite::count;
     using MDComposite::append;
     using MDComposite::operator [];
-
 
     bool operator== ( const MDStruct & rhs ) const
         {
