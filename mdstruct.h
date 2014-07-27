@@ -27,7 +27,6 @@
 // MDStruct
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-template< typename _struct >
 class MDStruct
     : private MDComposite
 {
@@ -35,7 +34,7 @@ class MDStruct
 private:
     struct _At
     {
-        _struct * m_this;
+        MDStruct * m_this;
         UInt32 m_pos;
     };
 
@@ -52,10 +51,11 @@ private:
 
     _At m_at;
 
+private:
     void init() throw()
         {
             this->m_at.m_pos = 0;
-            this->m_at.m_this = TYPE<Struct *>(this);
+            this->m_at.m_this = this;
         };
 
 public:
@@ -85,6 +85,10 @@ public:
     using MDComposite::block;
     using MDComposite::blockPtr;
     using MDComposite::blockSize;
+    using MDComposite::count;
+    using MDComposite::append;
+    using MDComposite::operator [];
+
 
     bool operator== ( const MDStruct & rhs ) const
         {
@@ -149,9 +153,6 @@ public:
         };
 
 public:
-    typedef MDStruct<_struct> Type;
-    typedef _struct Struct;
-
     template< typename _field >
     class MDField
         : private _BField
@@ -261,11 +262,122 @@ public:
                 this->m_at.m_this->update( this->m_at.m_pos, TYPE<void *>( v ) );
             };
     };
+
+    template< typename _field >
+    class _MDArray
+        :private _BField
+    {
+    public:
+        typedef _field Field;
+        using _BField::m_at;
+        _MDArray( )
+            {
+                MDComposite mdc;
+                this->m_at.m_this->insert( this->m_at.m_pos, mdc );                 
+            };
+            
+        Field operator[]( UInt32 i ) const throw()
+            {
+                MDCHead * p_head = (*this->m_at.m_this)[ this->m_at.m_pos ]; 
+                MDComposite mdc( p_head, p_head->size  );
+                if ( i >= mdc.count() )
+                    return Field();
+                return Field( *mdc[ i ] );
+            };
+           
+        void append( const Field & v )
+            {
+                MDCHead * p_head = ( *this->m_at.m_this )[ this->m_at.m_pos ]; 
+                MDComposite mdc( *p_head );
+                mdc.append( v );
+                this->m_at.m_this->update( this->m_at.m_pos, mdc );
+            };
+        
+        void update( UInt32 pos, const Field & v )
+            {
+                MDCHead * p_head = ( *this->m_at.m_this )[ this->m_at.m_pos ]; 
+                MDComposite mdc( *p_head );
+                mdc.setItem( pos, v );
+                this->m_at.m_this->update( this->m_at.m_pos, mdc );
+            };
+        
+        UInt32 count()
+            {
+                MDCHead * p_head = (*this->m_at.m_this)[ this->m_at.m_pos ]; 
+                MDComposite mdc( p_head, p_head->size  );
+                return mdc.count();                
+            };
+         
+        void remove( UInt32 pos )
+            {
+                MDCHead * p_head = ( *this->m_at.m_this )[ this->m_at.m_pos ]; 
+                MDComposite mdc( *p_head );
+                mdc.erase( pos );
+                this->m_at.m_this->update( this->m_at.m_pos, mdc );
+            };    
+    };    
+    
+    template< typename _field >
+    class MDArray 
+        : public _MDArray<_field> 
+    {
+    };
+        
+    template<>
+    class MDArray<string> 
+        : public _MDArray<string>
+    {
+    public:
+        Field operator[]( UInt32 i ) const throw()
+            {
+                MDCHead * p_head = (*this->m_at.m_this)[ this->m_at.m_pos ]; 
+                MDComposite mdc( p_head, p_head->size  );
+                if ( i >= mdc.count() )
+                    return Field();
+                p_head = mdc[i];
+                return Field( TYPE<Field::pointer>( mdeData( *p_head ) ), p_head->size );
+            };
+    };
+
+    template<>
+    class MDArray<UInt32> 
+        : public _MDArray<UInt32>
+    {
+        typedef UInt32 Field;
+    public:
+        Field operator[]( UInt32 i ) const throw()
+            {
+                MDCHead * p_head = (*this->m_at.m_this)[ this->m_at.m_pos ]; 
+                MDComposite mdc( p_head, p_head->size  );
+                if ( i >= mdc.count() )
+                    return Field();
+                p_head = mdc[i];
+                Field v = *TYPE<Field *>( mdeData( *p_head ) );
+                return *TYPE<Field *>( mdeData( *p_head ) );
+            };
+
+        void append( const Field & v )
+            {
+                MDCHead * p_head = ( *this->m_at.m_this )[ this->m_at.m_pos ]; 
+                MDComposite mdc( *p_head );
+                mdc.append( &v, sizeof( v ) );
+                this->m_at.m_this->update( this->m_at.m_pos, mdc );
+            };
+        
+        void update( UInt32 pos, const Field & v )
+            {
+                MDCHead * p_head = ( *this->m_at.m_this )[ this->m_at.m_pos ]; 
+                MDComposite mdc( *p_head );
+                mdc.setItem( pos, &v, sizeof( v ) );
+                this->m_at.m_this->update( this->m_at.m_pos, mdc );
+            };
+    };
+
 };
 
 #define MD_CONSTRUCTOR( class_name ) \
-	class_name( const class_name & rhs ) : Type( rhs ) {}; \
-    explicit class_name( const MDCHead & rhs ) : Type( rhs ) {}; \
-    explicit class_name( const SBlock & rhs ) : Type( rhs ) {};
+	class_name( const class_name & rhs ) : MDStruct( rhs ) {}; \
+    explicit class_name( const MDCHead & rhs ) : MDStruct( rhs ) {}; \
+    explicit class_name( const SBlock & rhs ) : MDStruct( rhs ) {};
 
 #endif // _H_MDSTRUCT
